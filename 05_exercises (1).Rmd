@@ -28,6 +28,7 @@ library(RColorBrewer)  # for color palettes
 library(sf)            # for working with spatial data
 library(leaflet)       # for highly customizable mapping
 library(ggthemes)      # for more themes (including theme_map())
+library(gifski)
 library(plotly)        # for the ggplotly() - basic interactivity
 library(gganimate)     # for adding animation layers to ggplots
 library(transformr)    # for "tweening" (gganimate)
@@ -125,7 +126,18 @@ ggplotly(vegetable_daily_harvests)
 
 ```{r}
 small_trains %>% 
-  group_by()
+  filter(departure_station == "PARIS LYON") %>% 
+  group_by(year, service) %>% 
+  mutate(cumtrips = cumsum(total_num_trips)) %>% 
+  arrange(year,
+          desc(cumtrips)) %>%
+  ggplot(aes(x = year,
+             y = cumtrips,
+             color = service)) +
+  geom_line()
+  
+  
+  
   
 ```
 
@@ -156,11 +168,19 @@ tomato_cum_harvest %>%
              y = cum_harvest_lb,
              fill = variety)) +
   geom_area() +
-  geom_line() +
+  scale_fill_brewer(palette = "Set3") +
+  geom_line(position = "stack") +
+  geom_text(aes(label = variety),
+            position = "stack",
+            color = "darkred") +
   labs(title = "Cumulative Harvest (lbs) of Tomato Varieties Over Time",
+       subtitle = "Date: {frame_along}",
        x = "",
        y = "") +
-  transition_time(date)
+  theme(legend.position = "none") +
+  transition_reveal(date)
+
+
 ```
 
 
@@ -187,15 +207,18 @@ ggmap(lisa_mallorca) +
              aes(x = lon, y = lat),
              color = "red",
              size = 2) +
+  geom_text(data = mallorca_bike_day7,
+            aes(label = round(ele, 2))) +
   geom_path(data = mallorca_bike_day7, 
-            aes(x = lon, y = lat, color = ele)) +
+            aes(x = lon, y = lat, color = ele),
+            size = 2) +
   scale_color_viridis_c(option = "inferno") +
   theme_map() +
   theme(legend.background = element_blank()) +
   labs(title = "Lisa's Bike Path in Mallorca",
        subtitle = "Time: {frame_along}",
-       color = "Elevation") 
-  #transition_reveal(time)
+       color = "Elevation") +
+  transition_reveal(time)
 ```
   
   5. In this exercise, you get to meet my sister, Heather! She is a proud Mac grad, currently works as a Data Scientist at 3M where she uses R everyday, and for a few years (while still holding a full-time job) she was a pro triathlete. You are going to map one of her races. The data from each discipline of the Ironman 70.3 Pan Am championships, Panama is in a separate file - `panama_swim`, `panama_bike`, and `panama_run`. Create a similar map to the one you created with my cycling data. You will need to make some small changes: 1. combine the files (HINT: `bind_rows()`, 2. make the leading dot a different color depending on the event (for an extra challenge, make it a different image using `geom_image()!), 3. CHALLENGE (optional): color by speed, which you will need to compute on your own from the data. You can read Heather's race report [here](https://heatherlendway.com/2016/02/10/ironman-70-3-pan-american-championships-panama-race-report/). She is also in the Macalester Athletics [Hall of Fame](https://athletics.macalester.edu/honors/hall-of-fame/heather-lendway/184) and still has records at the pool. 
@@ -212,7 +235,7 @@ ggmap(lisa_mallorca) +
   * Create a static plot with cumulative cases on the x-axis and new cases in the past 7 days on the x-axis. Connect the points for each state over time. HINTS: use `geom_path()` and add a `group` aesthetic.  Put the x and y axis on the log scale and make the tick labels look nice - `scales::comma` is one option. This plot will look pretty ugly as is.
   * Animate the plot to reveal the pattern by date. Display the date as the subtitle. Add a leading point to each state's line (`geom_point()`) and add the state name as a label (`geom_text()` - you should look at the `check_overlap` argument).  
   * Use the `animate()` function to have 200 frames in your animation and make it 30 seconds long. 
-  * Comment on what you observe.
+  * Comment on what you observe
   
   7. In this exercise you will animate a map of the US, showing how cumulative COVID-19 cases per 10,000 residents has changed over time. This is similar to exercises 11 & 12 from the previous exercises, with the added animation! So, in the end, you should have something like the static map you made there, but animated over all the days. Put date in the subtitle. Comment on what you see. The code below gives the population estimates for each state. Because there are so many dates, you are going to only do the animation for all Fridays. So, use `wday()` to create a day of week variable and filter to all the Fridays.
 
