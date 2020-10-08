@@ -192,7 +192,7 @@ tomato_cum_harvest %>%
   * Show "current" location with a red point. 
   * Show path up until the current point.  
   * Color the path according to elevation.  
-  * Show the time in the subtitle.  
+  * Show the time in the subtitle  
   * CHALLENGE: use the `ggimage` package and `geom_image` to add a bike image instead of a red point. You can use [this](https://raw.githubusercontent.com/llendway/animation_and_interactivity/master/bike.png) image. See [here](https://goodekat.github.io/presentations/2019-isugg-gganimate-spooky/slides.html#35) for an example. 
   * Add something of your own! And comment on if you prefer this to the static map and why or why not.
 
@@ -236,7 +236,31 @@ ggmap(lisa_mallorca) +
   * Animate the plot to reveal the pattern by date. Display the date as the subtitle. Add a leading point to each state's line (`geom_point()`) and add the state name as a label (`geom_text()` - you should look at the `check_overlap` argument).  
   * Use the `animate()` function to have 200 frames in your animation and make it 30 seconds long. 
   * Comment on what you observe
-  
+
+```{r}
+covid_week <- covid19 %>% 
+  group_by(state) %>% 
+  mutate(new_cases = cases - lag(cases, n = 7, order_by = date)) %>% 
+  replace_na(list(new_cases = 0)) %>% 
+  filter(cases > 19) %>% 
+  ggplot(aes(x = cases,
+             y = new_cases,
+             group = state)) +
+  scale_y_log10(labels = scales:: comma) +
+  scale_x_log10(labels = scales:: comma) +
+  geom_point(aes(group = state)) +
+  geom_path(aes(group = state)) +
+  geom_text(aes(label = state, color = state), check_overlap = TRUE) +
+  labs(title = "Cumulative Cases on the Order of New Cases in the Past Week on Log10 Scale",
+       subtitle = "Date: {frame_along}",
+       x = "Cumulative Cases",
+       y = "New Cases in the Past Week") +
+  theme(legend.position = "none") +
+  transition_reveal(date)
+
+```
+
+
   7. In this exercise you will animate a map of the US, showing how cumulative COVID-19 cases per 10,000 residents has changed over time. This is similar to exercises 11 & 12 from the previous exercises, with the added animation! So, in the end, you should have something like the static map you made there, but animated over all the days. Put date in the subtitle. Comment on what you see. The code below gives the population estimates for each state. Because there are so many dates, you are going to only do the animation for all Fridays. So, use `wday()` to create a day of week variable and filter to all the Fridays.
 
 ```{r}
