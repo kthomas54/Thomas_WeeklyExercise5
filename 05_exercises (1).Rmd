@@ -81,7 +81,7 @@ Once your repository is created, you should always open your **project** rather 
 
 * When you are finished with ALL the exercises, uncomment the options at the top so your document looks nicer. Don't do it before then, or else you might miss some important warnings and messages.
 
-## Warm-up exercises from tutorial 
+## Warm-up exercises from tutorial  
 
   1. Choose 2 graphs you have created for ANY assignment in this class and add interactivity using the `ggplotly()` function.
   
@@ -379,5 +379,6 @@ knitr::include_graphics("gg2018covid.gif")
 
   9. Below, provide a link to your GitHub page with this set of Weekly Exercises. Specifically, if the name of the file is 05_exercises.Rmd, provide a link to the 05_exercises.md file, which is the one that will be most readable on GitHub. If that file isn't very readable, then provide a link to your main GitHub page.
 
+  - [Main GitHub Page](https://github.com/kthomas54)
 
 **DID YOU REMEMBER TO UNCOMMENT THE OPTIONS AT THE TOP?**
