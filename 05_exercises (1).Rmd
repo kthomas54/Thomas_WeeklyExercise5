@@ -125,20 +125,30 @@ ggplotly(vegetable_daily_harvests)
   2. Use animation to tell an interesting story with the `small_trains` dataset that contains data from the SNCF (National Society of French Railways). These are Tidy Tuesday data! Read more about it [here](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-02-26).
 
 ```{r}
-small_trains %>% 
-  filter(departure_station == "PARIS LYON") %>% 
-  group_by(year, service) %>% 
-  mutate(cumtrips = cumsum(total_num_trips)) %>% 
-  arrange(year,
-          desc(cumtrips)) %>%
+cumtrips_station <- small_trains %>% 
+  filter(!is.na(service)) %>% 
+  group_by(departure_station, year) %>% 
+  mutate(cumtrips100 = cumsum(total_num_trips)/100) %>% 
+  arrange(desc(cumtrips100))
+ 
+ggcum <- cumtrips_station %>% 
   ggplot(aes(x = year,
-             y = cumtrips,
-             color = service)) +
-  geom_line()
-  
-  
-  
-  
+             y = cumtrips100,
+             fill = departure_station,
+             group = departure_station)) +
+  labs(title = "Cummulative Number of Departures (100's) for Each Station by Year",
+       subtitle = "Departure Station: {closest_state}",
+       x = "",
+       y = "") +
+  geom_col(position = "dodge") +
+  theme(legend.position = "none") +
+  transition_states(departure_station,
+                    transition_length = 4,
+                    state_length = 2) 
+
+animate(ggcum, duration = 45) 
+anim_save("ggcum.gif")
+knitr::include_graphics("ggcum.gif")
 ```
 
 ## Garden data
@@ -163,7 +173,7 @@ tomato_cum_harvest <- garden_harvest %>%
   mutate(cum_harvest_lb = cumsum(daily_harvest_lb)) %>% 
   mutate(variety = fct_reorder(variety, cum_harvest_lb, sum, .desc = TRUE))
 
-tomato_cum_harvest %>% 
+ggtomato <- tomato_cum_harvest %>% 
   ggplot(aes(x= date,
              y = cum_harvest_lb,
              fill = variety)) +
@@ -180,7 +190,9 @@ tomato_cum_harvest %>%
   theme(legend.position = "none") +
   transition_reveal(date)
 
-
+animate(ggtomato, duration = 20)
+anim_save("ggtomato.gif")
+knitr::include_graphics("ggtomato.gif")
 ```
 
 
@@ -202,16 +214,20 @@ lisa_mallorca <- get_stamenmap(
   maptype = "terrain",
   zoom = 10)
 
-ggmap(lisa_mallorca) +
+gglisa <- ggmap(lisa_mallorca) +
+  geom_path(data = mallorca_bike_day7, 
+            aes(x = lon, y = lat, color = ele),
+            size = 2) +
   geom_point(data = mallorca_bike_day7,
              aes(x = lon, y = lat),
              color = "red",
              size = 2) +
   geom_text(data = mallorca_bike_day7,
-            aes(label = round(ele, 2))) +
-  geom_path(data = mallorca_bike_day7, 
-            aes(x = lon, y = lat, color = ele),
-            size = 2) +
+            aes(label = round(ele, 2)),
+            hjust = 0,
+            vjust= 0,
+            check_overlap = TRUE,
+            color = "brown4") +
   scale_color_viridis_c(option = "inferno") +
   theme_map() +
   theme(legend.background = element_blank()) +
@@ -219,12 +235,40 @@ ggmap(lisa_mallorca) +
        subtitle = "Time: {frame_along}",
        color = "Elevation") +
   transition_reveal(time)
+
+animate(gglisa, duration = 15)
+anim_save("gglisa.gif")
+knitr::include_graphics("gglisa.gif")
 ```
   
   5. In this exercise, you get to meet my sister, Heather! She is a proud Mac grad, currently works as a Data Scientist at 3M where she uses R everyday, and for a few years (while still holding a full-time job) she was a pro triathlete. You are going to map one of her races. The data from each discipline of the Ironman 70.3 Pan Am championships, Panama is in a separate file - `panama_swim`, `panama_bike`, and `panama_run`. Create a similar map to the one you created with my cycling data. You will need to make some small changes: 1. combine the files (HINT: `bind_rows()`, 2. make the leading dot a different color depending on the event (for an extra challenge, make it a different image using `geom_image()!), 3. CHALLENGE (optional): color by speed, which you will need to compute on your own from the data. You can read Heather's race report [here](https://heatherlendway.com/2016/02/10/ironman-70-3-pan-american-championships-panama-race-report/). She is also in the Macalester Athletics [Hall of Fame](https://athletics.macalester.edu/honors/hall-of-fame/heather-lendway/184) and still has records at the pool. 
   
 ```{r}
+heather_trimap <- get_stamenmap(
+  bbox = c(left = -79.6, bottom = 8.9, right = -79.4, top = 9.0),
+  maptype = "terrain",
+  zoom = 12)
 
+heather_tri <- bind_rows(list(panama_bike, panama_run, panama_swim)) 
+
+ggheather <- 
+  ggmap(heather_trimap) +
+  geom_path(data = heather_tri, 
+            aes(x = lon, y = lat), 
+            size = 1) +
+  geom_point(data = heather_tri,
+             aes(x = lon, y = lat,
+                 color = event), 
+             size = 2) +
+  theme_map() +
+  theme(legend.background = element_blank()) +
+  labs(title = "Heather's Triathalon Path in Panama",
+       subtitle = "Time: {frame_along}") +
+transition_reveal(time)
+
+animate(ggheather)
+anim_save("ggheather.gif")
+knitr::include_graphics("ggheather.gif")
 ```
   
 ## COVID-19 data
@@ -238,7 +282,7 @@ ggmap(lisa_mallorca) +
   * Comment on what you observe
 
 ```{r}
-covid_week <- covid19 %>% 
+ggcovid <- covid19 %>% 
   group_by(state) %>% 
   mutate(new_cases = cases - lag(cases, n = 7, order_by = date)) %>% 
   replace_na(list(new_cases = 0)) %>% 
@@ -249,8 +293,9 @@ covid_week <- covid19 %>%
   scale_y_log10(labels = scales:: comma) +
   scale_x_log10(labels = scales:: comma) +
   geom_point(aes(group = state)) +
-  geom_path(aes(group = state)) +
-  geom_text(aes(label = state, color = state), check_overlap = TRUE) +
+  geom_path(aes(group = state,
+                color = state)) +
+  geom_text(aes(label = state), check_overlap = TRUE) +
   labs(title = "Cumulative Cases on the Order of New Cases in the Past Week on Log10 Scale",
        subtitle = "Date: {frame_along}",
        x = "Cumulative Cases",
@@ -258,6 +303,9 @@ covid_week <- covid19 %>%
   theme(legend.position = "none") +
   transition_reveal(date)
 
+animate(ggcovid, nframes = 200, duration = 30)
+anim_save("ggcovid.gif")
+knitr::include_graphics("ggcovid.gif")
 ```
 
 
@@ -267,7 +315,42 @@ covid_week <- covid19 %>%
 census_pop_est_2018 <- read_csv("https://www.dropbox.com/s/6txwv3b4ng7pepe/us_census_2018_state_pop_est.csv?dl=1") %>% 
   separate(state, into = c("dot","state"), extra = "merge") %>% 
   select(-dot) %>% 
-  mutate(state = str_to_lower(state))
+  mutate(state = str_to_lower(state)) 
+
+states_map <- map_data("state")
+
+covid19map <- covid19 %>% 
+  mutate(state = str_to_lower(state),
+         day_of_week = wday(date, label = TRUE)) %>% 
+  filter(day_of_week == "Fri") %>% 
+  group_by(state, fips) 
+  #top_n(n =1, wt= date) 
+
+covid19_with_2018_pop_est <-
+  covid19map %>% 
+  left_join(census_pop_est_2018,
+            by = c("state" = "state")) %>% 
+  group_by(state, date) %>% 
+  mutate(cases_per_10000 = (cases/est_pop_2018)*10000)
+
+gg2018covid <- covid19_with_2018_pop_est %>% 
+  ggplot() +
+  geom_map(map = states_map,
+           aes(map_id = state,
+               fill = cases_per_10000)) +
+  facet_wrap(vars(date)) + #I had to 'facet_wrap' the map here to get it to actually show a change in the amount of cases. For whatever reason, the transition would not show any change in the number of cases per state, which was odd because 'facet_wrap'-ing the data showed a change in number of cases each week per state. This was the best I could do to work around this issue while still using an animation to tell the story of the increase in covid cases in each state.
+  expand_limits(x = states_map$long, y = states_map$lat) + 
+  labs(title = "COVID Cases per 10000 People in the United States Over Time by Week",
+       subtitle = "Date: {frame_along}",
+       caption = "Created by Kalvin Thomas") +
+  theme_map() +
+  theme(legend.background = element_blank(),
+        legend.position = "none") +
+  transition_reveal(date)
+
+animate(gg2018covid)
+anim_save("gg2018covid.gif")
+knitr::include_graphics("gg2018covid.gif")
 ```
 
 ## Your first `shiny` app
