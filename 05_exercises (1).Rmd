@@ -81,7 +81,7 @@ Once your repository is created, you should always open your **project** rather 
 
 * When you are finished with ALL the exercises, uncomment the options at the top so your document looks nicer. Don't do it before then, or else you might miss some important warnings and messages.
 
-## Warm-up exercises from tutorial
+## Warm-up exercises from tutorial 
 
   1. Choose 2 graphs you have created for ANY assignment in this class and add interactivity using the `ggplotly()` function.
   
